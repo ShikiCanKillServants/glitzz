@@ -2,11 +2,14 @@ package reactions
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
+	"unicode"
+
 	"github.com/lovelaced/glitzz/config"
 	"github.com/lovelaced/glitzz/core"
 	"github.com/lovelaced/glitzz/util"
-	"strings"
-	"unicode"
 )
 
 var cutelist = []string{
@@ -69,22 +72,6 @@ var magiclist = []string{
 	"╰( ´・ω・)つ──☆ﾟ.*･｡ﾟ҉̛ {target}",
 	"╰( ´・ω・)つ──☆✿✿✿✿✿✿ {target}",
 	"(○´･∀･)o<･。:*ﾟ;+． {target}",
-}
-
-var denko = []string{
-	"(´･ω･`)",
-}
-
-var shrug = []string{
-	"¯\\_(ツ)_/¯",
-}
-
-var rnh = []string{
-	"--- REAL NIGGA HOURS ---",
-}
-
-var ernh = []string{
-	" --- END REAL NIGGA HOURS ---",
 }
 
 var stumplist = []string{
@@ -189,32 +176,13 @@ func New(sender core.Sender, conf config.Config) (core.Module, error) {
 	rv.AddCommand("magic", rv.magic)
 	rv.AddCommand("stump", rv.stump)
 	rv.AddCommand("spurd", rv.spurd)
-	rv.AddCommand("denko", rv.denko)
-	rv.AddCommand("shrug", rv.shrug)
-	rv.AddCommand("rnh", rv.rnh)
-	rv.AddCommand("ernh", rv.ernh)
 	rv.AddCommand("int", rv.intensifies)
+	rv.AddCommand("checkem", rv.checkem)
 	return rv, nil
 }
 
 type reactions struct {
 	core.Base
-}
-
-func (p *reactions) denko(arguments core.CommandArguments) ([]string, error) {
-	return denko, nil
-}
-
-func (p *reactions) rnh(arguments core.CommandArguments) ([]string, error) {
-	return rnh, nil
-}
-
-func (p *reactions) ernh(arguments core.CommandArguments) ([]string, error) {
-	return ernh, nil
-}
-
-func (p *reactions) shrug(arguments core.CommandArguments) ([]string, error) {
-	return shrug, nil
 }
 
 func (p *reactions) cute(arguments core.CommandArguments) ([]string, error) {
@@ -243,6 +211,11 @@ func (p *reactions) magic(arguments core.CommandArguments) ([]string, error) {
 	} else {
 		return nil, errors.New("no arguments given")
 	}
+}
+
+func (p *reactions) checkem(arguments core.CommandArguments) ([]string, error) {
+	dubs := fmt.Sprintf("%02d", rand.Intn(100))
+	return []string{dubs}, nil
 }
 
 func (p *reactions) intensifies(arguments core.CommandArguments) ([]string, error) {

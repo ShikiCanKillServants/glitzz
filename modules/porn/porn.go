@@ -10,10 +10,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-)
-
-const (
-	errNoComments = "Didn't return a video with comments"
+	"time"
 )
 
 // New registers the porn module.
@@ -46,7 +43,18 @@ func (pm *porn) pornHubTitle(arguments core.CommandArguments) ([]string, error) 
 	if len(arguments.Arguments) == 0 {
 		p, err = pornhub.InitRandom()
 	} else {
-		p, err = pornhub.InitRandom()
+		query := strings.Join(arguments.Arguments, " ")
+		results, err := pornhub.Search(query)
+
+		pm.Log.Info("(Porn) User " + arguments.Nick + " searched " + query)
+
+		if err != nil {
+			return nil, err
+		}
+		if len(results) == 0 {
+			return []string{"No results"}, nil
+		}
+		p, err = pornhub.Init(results[rand.Intn(len(results))].URL)
 	}
 	if err != nil {
 		return nil, err
@@ -71,22 +79,50 @@ func (pm *porn) pornHubTitle(arguments core.CommandArguments) ([]string, error) 
 
 func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error) {
 	var p *pornhub.Pornhub
+	var withArgs = len(arguments.Arguments) != 0
+	var results []pornhub.Result
 	var err error
 
-	if len(arguments.Arguments) == 0 {
-		p, err = pornhub.InitRandom()
-	} else {
-		p, err = pornhub.InitRandom()
+	if withArgs {
+		query := strings.Join(arguments.Arguments, " ")
+		results, err = pornhub.Search(query)
+
+		pm.Log.Info("(Porn) User " + arguments.Nick + " searched " + query)
+
+		if err != nil {
+			return nil, err
+		}
+		if len(results) == 0 {
+			return []string{"No results"}, nil
+		}
 	}
-	if err != nil {
-		return nil, err
+
+	// Try to find a random video with comments in N attempts
+	var tries = 5
+	var i = 0
+
+	for ; i < tries; i++ {
+		if withArgs {
+			p, err = pornhub.Init(results[rand.Intn(len(results))].URL)
+		} else {
+			p, err = pornhub.InitRandom()
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		if len(p.Comments) != 0 {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
 	}
+	if i == tries {
+		return nil, errors.New("Couldn't find a video with comments after " + strconv.Itoa(i) + " attempts")
+	}
+
 	pm.lastURL = p.URL
 	pm.lastTitle = p.Title
-
-	if len(p.Comments) == 0 {
-		return nil, errors.New(errNoComments)
-	}
 
 	com := p.Comments[rand.Intn(len(p.Comments))]
 	res := []string{util.Returntonormal(util.Boldtext(com.Author))}
@@ -95,7 +131,7 @@ func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error
 	}
 	res = append(res, " - "+com.Message)
 	if com.Score != 0 {
-		res = append(res, "👍 "+util.Returntonormal(util.Greentext(strconv.Itoa(com.Score))))
+		res = append(res, "		(Score: "+strconv.Itoa(com.Score)+")")
 	}
 
 	return []string{strings.Join(res, "")}, nil

@@ -21,7 +21,7 @@ func title(doc *goquery.Document) string {
 }
 
 func uploader(doc *goquery.Document) string {
-	return doc.Find(".video-info-row .usernameWrap").Find("a").Text()
+	return doc.Find(".video-info-row .usernameWrap a").Text()
 }
 
 func categories(doc *goquery.Document) (categories []string) {

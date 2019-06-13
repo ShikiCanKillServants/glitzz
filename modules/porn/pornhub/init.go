@@ -14,12 +14,10 @@ const (
 	httpTimeout = 2
 )
 
-// Pornhub structure, populated and returned by calling Init()
+// Pornhub structure, populated and returned by calling Init().
 type Pornhub struct {
-	// Private
 	doc *goquery.Document
 
-	// Public
 	Title      string
 	URL        string
 	Uploader   string
@@ -29,7 +27,7 @@ type Pornhub struct {
 	Comments   []comment
 }
 
-// Result is used to return invididual search results
+// Result is used to return invididual search results.
 type Result struct {
 	URL   string
 	Title string
@@ -62,7 +60,7 @@ func fetch(url string) (doc *goquery.Document, err error) {
 	return
 }
 
-// Init fetches and load the page
+// Init fetches and load the page.
 func Init(url string) (p *Pornhub, err error) {
 	p = &Pornhub{}
 
@@ -77,7 +75,7 @@ func Init(url string) (p *Pornhub, err error) {
 	return
 }
 
-// InitRandom fetches and load a random page
+// InitRandom fetches and load a random page.
 func InitRandom() (p *Pornhub, err error) {
 	return Init(pornhubURL + "/random")
 }

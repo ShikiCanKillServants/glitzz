@@ -20,9 +20,14 @@ func New(sender core.Sender, conf config.Config) (core.Module, error) {
 	}
 
 	rv.AddCommand("pornmd", rv.pornMD)
-	rv.AddCommand("porn", rv.pornHubComment)
-	rv.AddCommand("porntitle", rv.pornHubTitle)
+	rv.AddCommand("porn", rv.pornHubTitleShort)
+	rv.AddCommand("pornfull", rv.pornHubTitleFull)
+	rv.AddCommand("pornsay", rv.pornHubComment)
 	rv.AddCommand("pornlast", rv.pornHubLast)
+
+	rv.AddCommand("gayporn", rv.gayPornHubTitleShort)
+	rv.AddCommand("gaypornfull", rv.gayPornHubTitleFull)
+	rv.AddCommand("gaypornsay", rv.gayPornHubComment)
 	return rv, nil
 }
 
@@ -36,23 +41,29 @@ func (pm *porn) pornMD(arguments core.CommandArguments) ([]string, error) {
 	return pornmd.ReturnRandSearch()
 }
 
-func (pm *porn) pornHubTitle(arguments core.CommandArguments) ([]string, error) {
+func (pm *porn) pornHubTitle(arguments core.CommandArguments) (*pornhub.Pornhub, error) {
+	var gay = len(arguments.Arguments) > 0 && strings.ToUpper(arguments.Arguments[0]) == "GAY"
 	var p *pornhub.Pornhub
 	var err error
 
-	if len(arguments.Arguments) == 0 {
-		p, err = pornhub.InitRandom()
+	if len(arguments.Arguments) == 0 || (gay && len(arguments.Arguments) == 1) {
+		p, err = pornhub.InitRandom(gay)
 	} else {
-		query := strings.Join(arguments.Arguments, " ")
-		results, err := pornhub.Search(query)
+		var query string
+		if !gay {
+			query = strings.Join(arguments.Arguments, " ")
+		} else {
+			query = strings.Join(arguments.Arguments[1:], " ")
+		}
+		results, err := pornhub.Search(query, gay)
 
-		pm.Log.Info("(Porn) User " + arguments.Nick + " searched " + query)
+		pm.Log.Info("User " + arguments.Nick + " searched " + query)
 
 		if err != nil {
 			return nil, err
 		}
 		if len(results) == 0 {
-			return []string{"No results"}, nil
+			return nil, errors.New("No results")
 		}
 		p, err = pornhub.Init(results[rand.Intn(len(results))].URL)
 	}
@@ -62,8 +73,31 @@ func (pm *porn) pornHubTitle(arguments core.CommandArguments) ([]string, error) 
 	pm.lastURL = p.URL
 	pm.lastTitle = p.Title
 
-	res := []string{}
+	return p, nil
+}
 
+func (pm *porn) pornHubTitleShort(arguments core.CommandArguments) ([]string, error) {
+	p, err := pm.pornHubTitle(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	res := []string{}
+	if p.Uploader != "" {
+		res = append(res, p.Uploader+" - ")
+	}
+	res = append(res, p.Title)
+
+	return []string{strings.Join(res, "")}, nil
+}
+
+func (pm *porn) pornHubTitleFull(arguments core.CommandArguments) ([]string, error) {
+	p, err := pm.pornHubTitle(arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	res := []string{}
 	if p.Uploader != "" {
 		res = append(res, p.Uploader+" - ")
 	}
@@ -72,22 +106,28 @@ func (pm *porn) pornHubTitle(arguments core.CommandArguments) ([]string, error) 
 		res = append(res, " | 🔖 "+strings.Join(p.Categories, ", "))
 	}
 	if p.Views > 0 {
-		res = append(res, " | 📸 "+strconv.Itoa(p.Views))
+		res = append(res, " | 👀 "+strconv.Itoa(p.Views))
 	}
 	return []string{strings.Join(res, "")}, nil
 }
 
 func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error) {
+	var gay = len(arguments.Arguments) > 0 && strings.ToUpper(arguments.Arguments[0]) == "GAY"
 	var p *pornhub.Pornhub
 	var withArgs = len(arguments.Arguments) != 0
 	var results []pornhub.Result
 	var err error
 
 	if withArgs {
-		query := strings.Join(arguments.Arguments, " ")
-		results, err = pornhub.Search(query)
+		var query string
+		if !gay {
+			query = strings.Join(arguments.Arguments, " ")
+		} else {
+			query = strings.Join(arguments.Arguments[1:], " ")
+		}
+		results, err = pornhub.Search(query, gay)
 
-		pm.Log.Info("(Porn) User " + arguments.Nick + " searched " + query)
+		pm.Log.Info("User " + arguments.Nick + " searched " + query)
 
 		if err != nil {
 			return nil, err
@@ -105,7 +145,7 @@ func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error
 		if withArgs {
 			p, err = pornhub.Init(results[rand.Intn(len(results))].URL)
 		} else {
-			p, err = pornhub.InitRandom()
+			p, err = pornhub.InitRandom(gay)
 		}
 
 		if err != nil {
@@ -129,14 +169,34 @@ func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error
 	if com.Verified {
 		res = append(res, "✔")
 	}
-	res = append(res, " - "+com.Message)
+	res = append(res, ": "+com.Message)
 	if com.Score != 0 {
-		res = append(res, "		(Score: "+strconv.Itoa(com.Score)+")")
+		res = append(res, "	(Score: "+strconv.Itoa(com.Score)+")")
 	}
 
 	return []string{strings.Join(res, "")}, nil
 }
 
 func (pm *porn) pornHubLast(arguments core.CommandArguments) (result []string, err error) {
-	return []string{pm.lastTitle + " - " + pm.lastURL}, err
+	return []string{pm.lastURL + " - " + pm.lastTitle}, err
+}
+
+// Gay
+
+func (pm *porn) gayPornHubTitleShort(arguments core.CommandArguments) ([]string, error) {
+	args := arguments
+	args.Arguments = append([]string{"GAY"}, args.Arguments...)
+	return pm.pornHubTitleShort(args)
+}
+
+func (pm *porn) gayPornHubTitleFull(arguments core.CommandArguments) ([]string, error) {
+	args := arguments
+	args.Arguments = append([]string{"GAY"}, args.Arguments...)
+	return pm.pornHubTitleFull(args)
+}
+
+func (pm *porn) gayPornHubComment(arguments core.CommandArguments) ([]string, error) {
+	args := arguments
+	args.Arguments = append([]string{"GAY"}, args.Arguments...)
+	return pm.pornHubComment(args)
 }

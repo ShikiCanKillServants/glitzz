@@ -48,7 +48,7 @@ func fetch(url string) (doc *goquery.Document, err error) {
 		return
 	}
 
-	if response.StatusCode != http.StatusOK {
+	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusMovedPermanently {
 		return doc, fmt.Errorf("Something went wrong: %d code", response.StatusCode)
 	}
 	defer response.Body.Close()
@@ -76,12 +76,22 @@ func Init(url string) (p *Pornhub, err error) {
 }
 
 // InitRandom fetches and load a random page.
-func InitRandom() (p *Pornhub, err error) {
-	return Init(pornhubURL + "/random")
+func InitRandom(gay bool) (p *Pornhub, err error) {
+	var gayPath string
+	if gay {
+		gayPath = "/gay"
+	}
+
+	return Init(pornhubURL + gayPath + "/random")
 }
 
 // Search returns a list of matching videos
-func Search(query string) (results []Result, err error) {
+func Search(query string, gay bool) (results []Result, err error) {
+	var gayPath string
+	if gay {
+		gayPath = "/gay"
+	}
+
 	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
 	if err != nil {
 		return
@@ -89,6 +99,7 @@ func Search(query string) (results []Result, err error) {
 
 	doc, err := fetch(
 		pornhubURL +
+			gayPath +
 			"/video/search?search=" +
 			reg.ReplaceAllString(query, "+"))
 

@@ -35,10 +35,19 @@ type porn struct {
 	core.Base
 	lastURL   string
 	lastTitle string
+	lastCall  time.Time
 }
 
 func (pm *porn) pornMD(arguments core.CommandArguments) ([]string, error) {
 	return pornmd.ReturnRandSearch()
+}
+
+func (pm *porn) isSpam() (spam bool) {
+	spam = !pm.lastCall.IsZero() && time.Since(pm.lastCall) < (5*time.Second)
+	if !spam {
+		pm.lastCall = time.Now()
+	}
+	return
 }
 
 func (pm *porn) pornHubTitle(arguments core.CommandArguments) (*pornhub.Pornhub, error) {
@@ -77,6 +86,10 @@ func (pm *porn) pornHubTitle(arguments core.CommandArguments) (*pornhub.Pornhub,
 }
 
 func (pm *porn) pornHubTitleShort(arguments core.CommandArguments) ([]string, error) {
+	if pm.isSpam() {
+		return []string{"Stop flooding"}, nil
+	}
+
 	p, err := pm.pornHubTitle(arguments)
 	if err != nil {
 		return nil, err
@@ -92,6 +105,10 @@ func (pm *porn) pornHubTitleShort(arguments core.CommandArguments) ([]string, er
 }
 
 func (pm *porn) pornHubTitleFull(arguments core.CommandArguments) ([]string, error) {
+	if pm.isSpam() {
+		return []string{"Stop flooding"}, nil
+	}
+
 	p, err := pm.pornHubTitle(arguments)
 	if err != nil {
 		return nil, err
@@ -112,6 +129,10 @@ func (pm *porn) pornHubTitleFull(arguments core.CommandArguments) ([]string, err
 }
 
 func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error) {
+	if pm.isSpam() {
+		return []string{"Stop flooding"}, nil
+	}
+
 	var gay = len(arguments.Arguments) > 0 && strings.ToUpper(arguments.Arguments[0]) == "GAY"
 	var p *pornhub.Pornhub
 	var withArgs = len(arguments.Arguments) != 0
@@ -155,7 +176,7 @@ func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error
 			break
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 	}
 	if i == tries {
 		return nil, errors.New("Couldn't find a video with comments after " + strconv.Itoa(i) + " attempts")
@@ -171,7 +192,7 @@ func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error
 	}
 	res = append(res, ": "+com.Message)
 	if com.Score != 0 {
-		res = append(res, "	(Score: "+strconv.Itoa(com.Score)+")")
+		res = append(res, "	(Score:"+strconv.Itoa(com.Score)+")")
 	}
 
 	return []string{strings.Join(res, "")}, nil

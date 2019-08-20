@@ -10,8 +10,8 @@ import (
 
 const (
 	pornhubURL  = "https://www.pornhub.com"
-	userAgent   = "glitzz, a cute irc bot written in go"
-	httpTimeout = 2
+	userAgent   = "glitzz, an irc bot"
+	httpTimeout = 4
 )
 
 // Pornhub structure, populated and returned by calling Init().

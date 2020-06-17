@@ -5,13 +5,13 @@ import (
 )
 
 func (p *Pornhub) setInfos() {
-	p.URL = url(p.doc)
+	p.Link = link(p.doc)
 	p.Title = title(p.doc)
 	p.Uploader = uploader(p.doc)
 	p.Categories = categories(p.doc)
 }
 
-func url(doc *goquery.Document) (url string) {
+func link(doc *goquery.Document) (url string) {
 	url, _ = doc.Find("link[rel=canonical]").First().Attr("href")
 	return
 }

@@ -79,7 +79,7 @@ func (pm *porn) pornHubTitle(arguments core.CommandArguments) (*pornhub.Pornhub,
 	if err != nil {
 		return nil, err
 	}
-	pm.lastURL = p.URL
+	pm.lastURL = p.Link
 	pm.lastTitle = p.Title
 
 	return p, nil
@@ -182,7 +182,7 @@ func (pm *porn) pornHubComment(arguments core.CommandArguments) ([]string, error
 		return nil, errors.New("Couldn't find a video with comments after " + strconv.Itoa(i) + " attempts")
 	}
 
-	pm.lastURL = p.URL
+	pm.lastURL = p.Link
 	pm.lastTitle = p.Title
 
 	com := p.Comments[rand.Intn(len(p.Comments))]

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
-	"regexp"
+	"net/url"
 	"time"
 )
 
@@ -19,7 +19,7 @@ type Pornhub struct {
 	doc *goquery.Document
 
 	Title      string
-	URL        string
+	Link       string
 	Uploader   string
 	Categories []string
 	Views      int
@@ -92,17 +92,11 @@ func Search(query string, gay bool) (results []Result, err error) {
 		gayPath = "/gay"
 	}
 
-	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		return
-	}
-
 	doc, err := fetch(
 		pornhubURL +
 			gayPath +
 			"/video/search?search=" +
-			reg.ReplaceAllString(query, "+"))
-
+			url.QueryEscape(query))
 	if err != nil {
 		return
 	}
